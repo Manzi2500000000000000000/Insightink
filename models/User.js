@@ -24,14 +24,13 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    request_balance: {
-      type: Number,
-      default: 0,
-    },
-    rejected_balance: {
-      type: Number,
-      default: 0,
-    },
+    subscription_status: [{
+        type: String,
+        default: false,
+        amount:Number,
+        startDate:Date,
+    }],
+   
   },
   { timestamps: true }
 );

@@ -12,8 +12,6 @@ const CreateUser = async (req, res) => {
       user_fullnames: user_fullnames,
       password: hashedPassword,
       balance: 0.0,
-      request_balance: 0,
-      rejected_balance: 0,
       transaction_status: null,
       subscription_status: "inactivated",
     };
@@ -52,8 +50,6 @@ const UserLogin = async (req, res) => {
         
         user_fullnames,
         balance,
-        request_balance,
-        rejected_balance,
         access_level,
         transaction_status,
         subscription_status } = user;
@@ -63,8 +59,6 @@ const UserLogin = async (req, res) => {
           username,
           user_fullnames,
           balance,
-          request_balance,
-          rejected_balance,
           access_level,
           transaction_status,
           subscription_status}});
@@ -75,4 +69,74 @@ const UserLogin = async (req, res) => {
   }
 };
 
-module.exports = { CreateUser, UserLogin };
+//User Subscription
+const Subscription = async(req, res) =>{
+  const{ username, amount } =req.body;
+
+  try{
+    const startDate = new Date();
+    await User.findOneAndUpdate(
+      { username },
+      {$push:{ subscription: { amount, startDate }}},
+      { upsert:true }
+    );
+
+    res.status(201).json({message:'Subscription successful'})
+  } catch(err){
+    console.error('Error subscribing user:', error);
+    res.status(200).json({message:'Internal server error'});
+  }
+
+  //subscription notification
+  setInterval(async() =>{
+    try{
+      const users = await User.find();
+
+      for (const user of users){
+        for (const Subscription of user.Subscriptions){
+          const notificationDate = new Date(Subscription.startDate);
+          notificationDate.setFullYear(notificationDate.getFullYear() + 1);
+
+          if (new Date() >= notificationDate){
+            const notificationMessage = 'Your subscripiton of $${Subscription.amount} will end soon...';
+
+            //logging the notification to the server console
+            
+            console.log('Notification for user ${user.username}: ${notificationMessage}');
+          }
+        }
+      } 
+
+    } catch (err){
+      console.error('Error with the notification');
+    }
+  });
+};
+
+// UPDATE
+const UserUpdate = async(req, res) =>{
+if(req.body.userId === req.params.id){
+  if(req.body.password){
+    const salt = await bcrypt.getSalt(10);
+    req.body.password = await bcrypt.hash(req.body.password, salt);
+
+  }
+  try{
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set:req.body,
+      },
+      { new:true }
+    );
+    res.status(200).json(updatedUser);
+  } catch(err){
+     res.status(200).json(err);
+  }
+}  else{
+     res.status(401).json("You can Only Update youy Account ")
+}
+};
+
+
+module.exports = { CreateUser, UserLogin, Subscription, UserUpdate };
