@@ -15,6 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/user", userRoutes);
 
+app.get("/", (req,res)=>{
+    res.json({message:"Working"})
+});
+
 app.listen("5000", () =>{
     console.log("Backend is running")
 });
