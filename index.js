@@ -3,7 +3,7 @@ const app = express();
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const userRoutes = require('./routes/userRoutes');
-const postRoutes = require("./routes/postRoutes");
+const postRoutes = require("./routes/bookRoutes");
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/user", userRoutes);
-app.use("/", postRoutes);
+app.use("/books", postRoutes);
 
 app.listen("5000", () =>{
     console.log("Backend is running")
