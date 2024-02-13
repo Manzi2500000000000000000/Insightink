@@ -24,13 +24,11 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    subscription_status: [{
-        type: String,
-        default: false,
-        amount:Number,
-        startDate:Date,
-    }],
-   
+    subscription_status: {
+      type: String,
+      default: "inactive",
+    },
+
   },
   { timestamps: true }
 );

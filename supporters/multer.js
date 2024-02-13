@@ -1,24 +1,23 @@
 const multer = require('multer');
+const  { existsSync, mkdirSync }  = require("fs");
 const path = require('path');
 
 
 const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    if (!existsSync("uploads")) {
+      mkdirSync("uploads");
+    }
+    cb(null, "uploads",true);
+  },
   filename: function (req, file, cb) {
-    cb(null, file.originalname)
-  }
-})
-const allowedFileTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    cb(null, Date.now() + path.extname(file.originalname),true);
+    // cb(null, file.originalname);
+  },
+});
 
-const fileFilter = (req, file, cb) => {
-  if (allowedFileTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    const error = { message: 'Only JPEG, PNG, GIF files are allowed.' };
-    req.fileFilterError = error;
-    cb(null, false);
-  }
-};
-
-const upload = multer({ storage: storage, fileFilter: fileFilter });
+const upload = multer({ storage: storage });
 
 module.exports = upload;
+
+
