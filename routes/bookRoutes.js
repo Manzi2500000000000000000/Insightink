@@ -5,7 +5,11 @@ const Upload = require('../supporters/multer');
 
 
 router.get('/',getBook);
-router.post('/create', Upload.single("book_coverImage"), createBook);
+router.post('/create',  Upload.fields([{
+    name: 'book_coverImage', maxCount: 1
+  }, {
+    name: 'book_url', maxCount: 1
+  }]), createBook);
 
 
 module.exports = router;
