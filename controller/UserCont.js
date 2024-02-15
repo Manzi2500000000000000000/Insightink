@@ -15,16 +15,19 @@ const CreateUser = async (req, res) => {
       subscription_status: "inactive",
       access_level
     };
+    if (!username || !user_fullnames || !access_level) {
+      return res.json({ error: "Fill all fields" });
+    }
     const Existuser = await User.findOne({ username });
     if (Existuser) {
-      return res.json({ message: "User already exist" });
+      return res.json({ error: "User already exist" });
     }
     const user = new User(userObject);
     await user.save();
-    return res.json({ message: "user created successfully" });
+    return res.status(201).json({ message: "user created successfully" });
   } catch (err) {
     console.log(err);
-    return res.json({ message: "user not created", err });
+    return res.status(401).json({ error: "user not created", err });
   }
 };
 
@@ -154,7 +157,7 @@ const approveSubscription = async (req, res) => {
     if (user.balance < 100000) return res.status(451).json({ message: `Insufficient balance to approve ${username}'s approval` });
 
     const startDate = new Date();
-if(user.subscription_status === "Active") return res.status(201).json({ message: `${username} Already Activated` });
+    if (user.subscription_status === "Active") return res.status(201).json({ message: `${username} Already Activated` });
     const activate = await User.findOneAndUpdate(
       { username },
       {
