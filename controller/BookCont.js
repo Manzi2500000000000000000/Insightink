@@ -1,3 +1,4 @@
+const fs = require('fs');
 const Book = require("../models/Book");
 const uploadFile = require("../supporters/cloudinary");
 
@@ -14,25 +15,19 @@ const createBook = async (req, res) => {
       book_subtitle,
       book_coverImage: response.secure_url,
       book_author,
-      book_url: bookUrl.filename,
-      uploaded_by,
+      book_url: bookUrl.path,
+      uploaded_by:"kURADUSENGE",
     };
     console.log(bookUrl)
     const newBook = await Book.create(bookObj);
-    // /path/uploaded/filename
-    /**
-     *     res.status(200).json({ message: 'File uploaded successfully' });
-     */
+
     res
       .status(201)
       .json({ message: "Book created successfully", data: newBook });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-  // } else {
-  //     return res.json({ message: "Uplo" })
 
-  // }
 };
 const getBook = async (req, res) => {
   try {
@@ -40,7 +35,7 @@ const getBook = async (req, res) => {
     if (book_id) {
       const bookObj = await Book.findById(book_id);
       if (!bookObj) {
-        return res.status(404).json({ message: "Book not found" });
+        return res.status(200).json({ error: "Book not found" });
       }
       return res.status(200).json({
         message: "Book retrieved successfully",
@@ -49,7 +44,7 @@ const getBook = async (req, res) => {
     } else {
       const books = await Book.find();
       if (!books || books.length === 0) {
-        return res.status(404).json({ message: "Books not found" });
+        return res.status(200).json({ error: "Books not found" });
       }
       return res.status(200).json({
         message: "Books retrieved successfully",
@@ -58,9 +53,26 @@ const getBook = async (req, res) => {
     }
   } catch (error) {
     console.error("Error fetching book data:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const fileRead = async (req, res) => {
+  try {
+    const { file } = req.params;
+
+    // Read the PDF file as a buffer
+    const fileData = await fs.promises.readFile(file);
+    return res.status(200).json({
+      message: "PDF file retrieved successfully",
+      fileData, // Or any processed PDF information
+    });
+  } catch (error) {
+    console.error("Error reading PDF file:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const deleteBook = async (req, res) => {
   const { book_id } = req.params;
@@ -81,13 +93,33 @@ const updateBook = async (req, res) => {
   const { updatedData } = req.body;
 
   try {
-    const book = await Book.findByIdAndUpdate({_id:book_id}, updatedData, { new: true });
+    const book = await Book.findByIdAndUpdate({ _id: book_id }, updatedData, { new: true });
     if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+      return res.status(200).json({ error: "Book not found" });
     }
     res.status(200).json({ message: "Book updated successfully", data: book });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error"});
+    res.status(200).json({ error: "Internal server error" });
   }
 };
-module.exports = { createBook, getBook, deleteBook, updateBook };
+const   totalBooks = async (req,res) =>{
+  try {
+    // Aggregate to get both user count and total balance
+    const results = await Book.aggregate([
+      {
+        $group: {
+          _id: null, // No grouping needed
+          totalBooks: { $sum: 1 }, // Count all documents
+        },
+      },
+    ]);
+
+    // Extract and return the desired values
+    const { totalBooks} = results[0];
+
+    return res.status(200).json({ totalBooks });
+  } catch (error) {
+    return res.status(202).json({ message: "Error fetching data:", totalBooks });
+  }
+}
+module.exports = { createBook, getBook, deleteBook, updateBook, fileRead ,totalBooks };

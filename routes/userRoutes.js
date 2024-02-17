@@ -4,6 +4,7 @@ const UserCont = require("../controller/UserCont");
 
 router.get("/", UserCont.GetUsers);
 router.post("/register", UserCont.CreateUser);
+router.get("/total", UserCont.totalUsers);
 
 router.post("/login", UserCont.UserLogin);
 

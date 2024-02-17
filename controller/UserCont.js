@@ -11,13 +11,12 @@ const CreateUser = async (req, res) => {
       user_fullnames,
       password: hashedPassword,
       balance: 0.0,
-      transaction_status: null,
       subscription_status: "inactive",
       access_level
     };
-    if (!username || !user_fullnames || !access_level) {
-      return res.json({ error: "Fill all fields" });
-    }
+  if(access_level === 1){
+    userObject.subscription_status = "active"
+  }
     const Existuser = await User.findOne({ username });
     if (Existuser) {
       return res.json({ error: "User already exist" });
@@ -33,24 +32,18 @@ const CreateUser = async (req, res) => {
 
 //LOGIN
 const UserLogin = async (req, res) => {
-  let foundUser = {};
   const { username, password } = req.body;
-
   try {
     const user = await User.findOne({ username });
-
     if (!user) {
       return res.status(401).json({ message: "User not Found" });
     }
-
     const passwordMatch = await bcrypt.compare(password, user.password);
-
     if (!passwordMatch) {
       return res.status(401).json({ message: "Incorrect Password" });
     }
 
     const {
-
       user_fullnames,
       balance,
       access_level,
@@ -70,8 +63,7 @@ const UserLogin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(200).json({ error: "Internal server error" });
   }
 };
 
@@ -99,20 +91,21 @@ const GetUsers = async (req, res) => {
   }
 };
 
-
 //User Subscription
 const Subscribe = async (req, res) => {
-  const { username, amount } = req.body;
-
+  const { username, balance } = req.body;
+if(balance < 0){
+  return res.status(200).json({error:"Invalid Amount"})
+}
   try {
     const user = await User.findOne({ username });
 
     if (!user) {
       // If the user doesn't exist, you may want to handle it accordingly.
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(200).json({ error: 'User not found' });
     }
 
-    const newBalance = user.balance + amount;
+    const newBalance = user.balance + balance;
 
     await User.findOneAndUpdate(
       { username },
@@ -138,26 +131,25 @@ const Subscribe = async (req, res) => {
 
 
   } catch (err) {
-    res.status(500).json({ message: 'Error subscribing user:', error: err });
+    res.status(500).json({ error: 'Error subscribing user:', error: err });
   }
 
 
 }
 const approveSubscription = async (req, res) => {
   const { username } = req.body;
-  if (!username) return res.status(404).json({ message: 'User doesn\'t exist' });
+  if (!username) return res.status(201).json({ error: 'User doesn\'t exist' });
   try {
     const user = await User.findOne({ username });
 
     if (!user) {
       // If the user doesn't exist, handle it accordingly
-      return res.status(404).json({ message: `User ${username} not found` });
+      return res.status(201).json({ error: `User ${username} not found` });
 
     }
-    if (user.balance < 100000) return res.status(451).json({ message: `Insufficient balance to approve ${username}'s approval` });
+    if (user.balance < 100000) return res.status(201).json({ error: `Insufficient balance to approve ${username}'s approval` });
 
-    const startDate = new Date();
-    if (user.subscription_status === "Active") return res.status(201).json({ message: `${username} Already Activated` });
+    if (user.subscription_status === "Active") return res.status(201).json({ error: `${username} Already Activated` });
     const activate = await User.findOneAndUpdate(
       { username },
       {
@@ -168,7 +160,7 @@ const approveSubscription = async (req, res) => {
     if (activate) res.status(201).json({ message: `${username} Subscription Activated` });
   } catch (err) {
     console.error('Error subscribing user:', err);
-    res.status(500).json({ message: `Error in subscription activation for :${username} account`, err }); // Corrected status code for internal server error
+    res.status(201).json({ message: `Error in subscription activation for :${username} account`, err }); // Corrected status code for internal server error
   }
 
 
@@ -200,7 +192,6 @@ const approveSubscription = async (req, res) => {
   */
 }
 
-
 // UPDATE
 const UserUpdate = async (req, res) => {
   if (req.body.userId === req.params.id) {
@@ -226,5 +217,28 @@ const UserUpdate = async (req, res) => {
   }
 };
 
+const   totalUsers = async (req,res) =>{
+  try {
+    // Aggregate to get both user count and total balance
+    const results = await User.aggregate([
+      {
+        $group: {
+          _id: null, // No grouping needed
+          totalUsers: { $sum: 1 }, // Count all documents
+          totalBalance: { $sum: '$balance' }, // Sum the balance field
+        },
+      },
+    ]);
 
-module.exports = { CreateUser, UserLogin, Subscribe, UserUpdate, GetUsers, approveSubscription };
+    // Extract and return the desired values
+    const { totalUsers, totalBalance } = results[0];
+
+    return res.status(200).json({ totalUsers, totalBalance });
+  } catch (error) {
+    return res.status(202).json({ message: "Error fetching data:", totalBalance });
+  }
+}
+
+
+
+module.exports = { CreateUser, UserLogin, Subscribe, UserUpdate, GetUsers, approveSubscription ,totalUsers };
