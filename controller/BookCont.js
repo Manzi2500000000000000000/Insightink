@@ -16,9 +16,8 @@ const createBook = async (req, res) => {
       book_coverImage: response.secure_url,
       book_author,
       book_url: bookUrl.path,
-      uploaded_by:"kURADUSENGE",
+      uploaded_by:'System Admin'
     };
-    console.log(bookUrl)
     const newBook = await Book.create(bookObj);
 
     res
@@ -91,7 +90,7 @@ const deleteBook = async (req, res) => {
 const updateBook = async (req, res) => {
   const { book_id } = req.params;
   const { updatedData } = req.body;
-
+console.log(updatedData)
   try {
     const book = await Book.findByIdAndUpdate({ _id: book_id }, updatedData, { new: true });
     if (!book) {
